@@ -175,13 +175,14 @@ function api(action, params={}){
   return new Promise((res, rej)=>{
     if(!cfg.api || !cfg.key){ rej(new Error('請先到 ⚙️ 設定金鑰')); return; }
     const cb = 'ptc_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
-    const q = new URLSearchParams(Object.assign({}, params, { action, key:cfg.key, staff:cfg.staff, callback:cb, _:Date.now() }));
+    const all = Object.assign({}, params, { action, key:cfg.key, staff:cfg.staff, callback:cb, _:Date.now() });
+    const q = Object.keys(all).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(all[k]==null?'':all[k])).join('&');
     const s = document.createElement('script');
     const tm = setTimeout(()=>{ done(); rej(new Error('連線逾時，請再試一次')); }, 30000);
     function done(){ clearTimeout(tm); window[cb]=()=>{}; s.remove(); }
     window[cb] = d => { done(); d && d.ok ? res(d) : rej(Object.assign(new Error((d&&d.error)||'發生錯誤'), {data:d||{}})); };
     s.onerror = ()=>{ done(); rej(new Error('連線失敗，請確認網路')); };
-    s.src = cfg.api + (cfg.api.includes('?')?'&':'?') + q.toString();
+    s.src = cfg.api + (cfg.api.includes('?')?'&':'?') + q;
     document.body.appendChild(s);
   });
 }
@@ -341,7 +342,7 @@ function renderList(el){
 
   const q=S.q.trim();
   const list=S.roster.filter(s=>match(s,S.filter) && (!q || (s.name+s.company+s.idTail).includes(q)));
-  if(!list.length) h+=`<div class="empty">沒有符合的學員</div>`;
+  if(!list.length) h+= S.roster.length ? `<div class="empty">「${esc((FILTERS.find(f=>f[0]===S.filter)||[])[1]||'')}」沒有符合的學員<br><br><button class="ghost" id="showAll">顯示全部 ${S.roster.length} 人</button></div>` : `<div class="empty">${S.loading?'<span class="spin"></span> 讀取名單…':'名單是空的，請按 ↻ 重新整理'}</div>`;
   const idx = new Map(S.roster.map((s,i)=>[s.row,i+1]));
   list.forEach(s=>{
     const b=S.busy[s.row], amt=S.amt[s.row]??s.fee;
@@ -373,6 +374,7 @@ function renderList(el){
 
   el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ S.filter=b.dataset.f; render(); });
   $('#re').onclick=()=>loadRoster();
+  const sa=$('#showAll'); if(sa) sa.onclick=()=>{ S.filter='all'; S.q=''; render(); };
   const qi=$('#q'); qi.oninput=()=>{ S.q=qi.value; const p=qi.selectionStart; render(); const n=$('#q'); n.focus(); n.setSelectionRange(p,p); };
   el.querySelectorAll('.stu [data-act]').forEach(b=>b.onclick=()=>{
     const s=S.roster.find(x=>x.row===+b.closest('.stu').dataset.row), a=b.dataset.act;
