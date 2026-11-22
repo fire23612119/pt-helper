@@ -178,7 +178,16 @@ const nowHM = () => new Date(Date.now()+8*3600e3).toISOString().slice(11,16);
 const sess = () => (S.day && S.day.sessions.find(x=>x.sid===S.sid)) || null;
 const short = s => s ? `${s.course}${s.place?'｜'+s.place:''}` : '';
 
-function api(action, params={}){
+const READS = { ptcDay:1, ptcRoster:1, ptcLedger:1, ptcAbsent:1 };   // 重送不會造成重複的動作
+async function api(action, params={}){
+  try{ return await apiOnce(action, params); }
+  catch(e){
+    if(!READS[action] || (e.data && e.data.ok===false)) throw e;   // 伺服器已明確回覆錯誤就不重試
+    await new Promise(r=>setTimeout(r,1500));
+    return apiOnce(action, params);                               // 網路中斷：自動再試一次
+  }
+}
+function apiOnce(action, params={}){
   return new Promise((res, rej)=>{
     if(!cfg.api || !cfg.key){ rej(new Error('請先到 ⚙️ 設定金鑰')); return; }
     const cb = 'ptc_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
@@ -261,13 +270,13 @@ async function loadDay(silent){
     S.day = await api('ptcDay', { date:S.date });
     if(S.sid && !S.day.sessions.some(x=>x.sid===S.sid)) S.sid='';
     if(S.sid) await loadRoster(true);
-  }catch(e){ S.day = S.day || { sessions:[] }; fail(e); }
+  }catch(e){ S.day = S.day || { sessions:[] }; if(!silent) fail(e); }
   S.loading=false; render();
 }
 async function loadRoster(silent){
   if(!S.sid) return;
   if(!silent){ S.loading=true; render(); }
-  try{ S.roster = (await api('ptcRoster', { sid:S.sid })).students || []; }catch(e){ fail(e); }
+  try{ S.roster = (await api('ptcRoster', { sid:S.sid })).students || []; }catch(e){ if(!silent || !S.roster.length) fail(e); }
   S.loading=false; render();
 }
 async function loadLedger(){
