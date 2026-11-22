@@ -182,6 +182,10 @@ function api(action, params={}){
   return new Promise((res, rej)=>{
     if(!cfg.api || !cfg.key){ rej(new Error('請先到 ⚙️ 設定金鑰')); return; }
     const cb = 'ptc_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    if('sid' in params){   // 網址只傳班別代碼，不傳含特殊符號的班名
+      const ss = S.day && S.day.sessions.find(x=>x.sid===params.sid);
+      if(ss && ss.h){ params = Object.assign({}, params, { sh:ss.h }); delete params.sid; }
+    }
     const all = Object.assign({}, params, { action, key:cfg.key, staff:cfg.staff, callback:cb, _:Date.now() });
     const q = Object.keys(all).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(all[k]==null?'':all[k])).join('&');
     const s = document.createElement('script');
