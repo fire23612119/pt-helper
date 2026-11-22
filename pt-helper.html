@@ -137,6 +137,8 @@ main{padding-bottom:40px}
 .stu.abs .nm{color:var(--sub)}
 .absline{margin-top:8px;font-size:14px;color:var(--bad)}
 .absline a{color:var(--pri);text-decoration:none;font-weight:600;margin-left:4px}
+.tel{display:inline-block;margin-top:4px;padding:3px 0;color:var(--pri);font-size:15px;font-weight:600;text-decoration:none}
+.tel small{color:var(--sub);font-weight:400;font-size:12px}
 .tag.t-pri{background:var(--pri-soft);color:var(--pri)}
 .note{margin-top:10px;background:#f7f8fb;border-radius:10px;padding:10px;font-size:14px}
 .badge.b-grey{background:#eef0f5;color:var(--sub)}
@@ -398,10 +400,11 @@ function renderList(el){
         <div style="flex:1;min-width:0">
           <div class="nm">${esc(s.name)} ${s.wait?'<span class="tag">候補</span>':''} ${s.walkin?'<span class="tag t-pri">🆕現場報名</span>':''}</div>
           <div class="sub">${esc(s.company||'—')}　＊${esc(s.idTail)}</div>
+          ${s.phone?`<a class="tel" href="tel:${esc(s.phone.replace(/[^\d+#]/g,''))}">📞 ${esc(s.phone)}${s.landline?' <small>（市話）</small>':''}</a>`:''}
         </div>
         <button class="absbtn ${s.absent?'on':''}" data-act="abs" ${b?'disabled':''}>${b==='abs'?'<span class="spin"></span>':(s.absent?'缺席':'缺席')}</button>
       </div>
-      ${s.absent?`<div class="absline">❌ 缺席 ${s.absDates.map(rocShort).join('、')}　${s.phone?`<a href="tel:${esc(s.phone.replace(/[^\d+]/g,''))}">📞 ${esc(s.phone)}</a>`:'（無電話）'}</div>`:''}
+      ${s.absent?`<div class="absline">❌ 缺席 ${s.absDates.map(rocShort).join('、')}${s.phone?'':'　（無電話）'}</div>`:''}
       <div class="state">${pay} ${conf}
         <span style="flex:1"></span><button class="more" data-act="more">⋯</button></div>
       ${!s.absent && s.pay==='due' ? `<div class="btns">
@@ -480,7 +483,7 @@ function editAmt(s, topup){
 }
 function moreMenu(s){
   let o=`<h3>${esc(s.name)}</h3><div class="muted">${esc(s.company||'')}　${esc(s.source||'')}　${s.phone?esc(s.phone):''}</div>`;
-  if(s.phone) o+=`<a class="opt" href="tel:${esc(s.phone.replace(/[^\d+]/g,''))}">📞 撥打 ${esc(s.phone)}</a>`;
+  if(s.phone) o+=`<a class="opt" href="tel:${esc(s.phone.replace(/[^\d+#]/g,''))}">📞 撥打 ${esc(s.phone)}</a>`;
   if(s.pay==='due') o+=`<button class="opt" data-o="amt">✏️ 修改收款金額</button>`;
   if(s.pay==='remit') o+=`<button class="opt" data-o="topup">💵 補收差額（匯款被扣手續費）</button>`;
   if(s.cash) o+=`<button class="opt danger" data-o="undo">↩︎ 取消最近一筆收現</button>`;
