@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f7fb">
+<meta name="robots" content="noindex">
+<title>PT小幫手｜駐班</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#1d2433; --sub:#6b7385; --line:#e4e7ef;
+  --pri:#2457d6; --pri-soft:#e8eefc; --ok:#1f8a4c; --ok-soft:#e5f5ec;
+  --warn:#b26a00; --warn-soft:#fff3dd; --bad:#c62f2f; --bad-soft:#fde9e9;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 12px 8px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+header h1{font-size:18px;margin:0;flex:1}
+.iconbtn{border:0;background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 1px 2px rgba(0,0,0,.06);font-size:14px}
+header .t{font-weight:700;font-size:17px;line-height:1.3}
+header .s{font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:center;margin-top:2px}
+main{padding:12px 12px 100px;max-width:640px;margin:0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+  display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:9px 0 8px;font-size:12px;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button .i{font-size:20px}
+nav button.on{color:var(--pri);font-weight:600}
+.card{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.row{display:flex;align-items:center;gap:8px}
+.muted{color:var(--sub);font-size:13px}
+.h2{font-size:15px;font-weight:700;margin:14px 2px 8px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:8px;display:flex}
+.bar i{display:block;height:100%}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.stat{background:#fff;border-radius:12px;padding:8px 4px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:12px;color:var(--sub)}
+.money{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.money div{background:#fff;border-radius:12px;padding:10px 12px}
+.money b{display:block;font-size:22px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.search{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;margin:8px 0}
+.stu{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.stu .top{display:flex;align-items:flex-start;gap:8px}
+.stu .nm{font-weight:700;font-size:18px;letter-spacing:1px}
+.stu .sub{font-size:13px;color:var(--sub);margin-top:2px;word-break:break-all}
+.amt{margin-left:auto;border:1px dashed #cfd5e3;background:#fafbfe;border-radius:10px;padding:4px 10px;font-weight:700;white-space:nowrap}
+.amt.est::after{content:" 估";font-size:11px;color:var(--warn)}
+.more{border:0;background:none;color:var(--sub);font-size:20px;padding:0 4px;line-height:1}
+.btns{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px}
+.pay{border:0;border-radius:12px;padding:13px 6px;font-weight:700;font-size:16px;color:#fff;background:var(--ok)}
+.pay:disabled{opacity:.5}
+.later{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px;font-size:14px;color:var(--sub)}
+.badge{display:inline-block;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600}
+.b-ok{background:var(--ok-soft);color:var(--ok)} .b-pri{background:var(--pri-soft);color:var(--pri)}
+.b-warn{background:var(--warn-soft);color:var(--warn)} .b-bad{background:var(--bad-soft);color:var(--bad)}
+.tag{font-size:12px;border-radius:6px;padding:1px 6px;background:var(--warn-soft);color:var(--warn);font-weight:600;vertical-align:2px;letter-spacing:0}
+.state{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.link{border:0;background:none;color:var(--pri);padding:4px 0;font-size:14px}
+.empty{text-align:center;color:var(--sub);padding:30px 10px}
+label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+.inp{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.grid3{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.seg{display:flex;background:#eef0f5;border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:8px 4px;font-size:14px}
+.seg button.on{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.primary{width:100%;border:0;border-radius:12px;padding:13px;background:var(--pri);color:#fff;font-weight:700;font-size:16px;margin-top:12px}
+.primary:disabled{opacity:.5}
+.ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:14px}
+.wide{width:100%;margin-top:4px;padding:12px}
+.checkout{width:100%;border:0;border-radius:14px;padding:15px;background:var(--ink);color:#fff;font-weight:700;font-size:17px;margin-top:14px}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.sum div{background:#f7f8fb;border-radius:10px;padding:8px}
+.sum b{display:block;font-size:17px}
+.sum .hl{background:var(--ok-soft)} .sum .hl b{color:var(--ok)}
+.ent{display:flex;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;align-items:center}
+.ent:first-child{border-top:0}
+.ent .m{margin-left:auto;font-weight:700;white-space:nowrap}
+.ent.void{opacity:.45;text-decoration:line-through}
+.closed{background:var(--ink);color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.closed .muted{color:#c6cbd8}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-top:1px solid var(--line)}
+.ck:first-of-type{border-top:0}
+.ck input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--ok);flex:none}
+.ck .tx{flex:1;line-height:1.4}
+.ck.done .tx{color:var(--sub);text-decoration:line-through}
+.ck .who{font-size:12px;color:var(--sub);display:block}
+.ck .del{border:0;background:none;color:var(--bad);font-size:18px;display:none}
+.editing .ck .del{display:block}
+.phase{display:flex;align-items:center;justify-content:space-between}
+.phase h3{margin:0;font-size:15px}
+.prog{font-size:13px;color:var(--sub)}
+.auto{font-size:12px;margin-left:4px}
+#snack{position:fixed;left:12px;right:12px;bottom:78px;z-index:50;background:#1d2433;color:#fff;border-radius:12px;padding:12px 14px;
+  display:none;align-items:center;gap:10px;max-width:616px;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+#snack.show{display:flex}
+#snack span{flex:1}
+#snack button{border:0;background:none;color:#8fb0ff;font-weight:700}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.show{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 4px}
+.sheet .opt{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:14px 4px;font-size:16px}
+.sheet .opt.danger{color:var(--bad)}
+.gate{max-width:360px;margin:60px auto 0;text-align:center}
+.gate h2{margin:0 0 6px}
+.pin{font-size:32px;letter-spacing:14px;text-align:center;padding:12px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+main{padding-bottom:40px}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chip.c-bad{background:var(--bad-soft);color:var(--bad);border-color:transparent;font-weight:600}
+.chip.c-warn{background:var(--warn-soft);color:var(--warn);border-color:transparent;font-weight:600}
+.chip.c-pri{background:var(--pri-soft);color:var(--pri);border-color:transparent;font-weight:600}
+.cls{cursor:pointer}
+.big{font-size:15px;margin:8px 0}.big b{font-size:24px}
+.stats5{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:8px}
+.stats5 .stat b{font-size:19px}.stats5 .stat small{font-size:12px;color:var(--sub);font-weight:400}
+.stats5 .stat span{font-size:11px}
+.no{min-width:24px;height:24px;border-radius:8px;background:#eef0f5;color:var(--sub);font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.absbtn{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:10px;padding:8px 12px;font-size:14px;white-space:nowrap}
+.absbtn.on{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:700}
+.stu.abs{background:#fbf6f6}
+.stu.abs .nm{color:var(--sub)}
+.absline{margin-top:8px;font-size:14px;color:var(--bad)}
+.absline a{color:var(--pri);text-decoration:none;font-weight:600;margin-left:4px}
+.tag.t-pri{background:var(--pri-soft);color:var(--pri)}
+.note{margin-top:10px;background:#f7f8fb;border-radius:10px;padding:10px;font-size:14px}
+.badge.b-grey{background:#eef0f5;color:var(--sub)}
+.note.bad{background:var(--bad-soft);color:var(--bad)}
+a.opt{color:var(--pri);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>PT小幫手</h1>
+  <input type="date" id="datePick" class="iconbtn">
+  <button class="iconbtn" id="btnSet" aria-label="設定">⚙️</button>
+</header>
+<main id="main"></main>
+<div id="snack"><span id="snackTx"></span><button id="snackBtn"></button></div>
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<script>
+/* =========================================================
+ *  設定
+ * ========================================================= */
+const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbzkIaz1EegxlRQ9NjeygvC3iah7nuT7clXfMXc3NKLar94bpMBfJ9Lnb-FFC0sBi734/exec';
+const LS = { cfg:'ptc2_cfg', tpl:'ptc2_ck_tpl', ck:'ptc2_ck_' };
+function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+let cfg = Object.assign({ api:DEFAULT_API, key:'', staff:'' }, lsGet(LS.cfg,{}));
+
+const S = { date: todayYmd(), day:null, sid:'', tab:'list', roster:[], filter:'all', q:'',
+            busy:{}, amt:{}, ledger:[], loading:false, exp:{ item:'便當', method:'現場現金' }, ckEdit:false };
+
+/* ---------- 工具 ---------- */
+function todayYmd(){ return new Date(Date.now()+8*3600e3).toISOString().slice(0,10).replace(/-/g,''); }
+const roc = y => (Number(y.slice(0,4))-1911) + y.slice(4);
+const rocShort = r => r ? String(r).slice(3,5)+'/'+String(r).slice(5,7) : '';
+const ymdInput = y => `${y.slice(0,4)}-${y.slice(4,6)}-${y.slice(6,8)}`;
+const money = n => (Number(n)<0?'-':'') + '$' + Math.abs(Number(n||0)).toLocaleString('en-US');
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = s => document.querySelector(s);
+const nowHM = () => new Date(Date.now()+8*3600e3).toISOString().slice(11,16);
+const sess = () => (S.day && S.day.sessions.find(x=>x.sid===S.sid)) || null;
+const short = s => s ? `${s.course}${s.place?'｜'+s.place:''}` : '';
+
+function api(action, params={}){
+  return new Promise((res, rej)=>{
+    if(!cfg.api || !cfg.key){ rej(new Error('請先到 ⚙️ 設定金鑰')); return; }
+    const cb = 'ptc_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    const q = new URLSearchParams(Object.assign({}, params, { action, key:cfg.key, staff:cfg.staff, callback:cb, _:Date.now() }));
+    const s = document.createElement('script');
+    const tm = setTimeout(()=>{ done(); rej(new Error('連線逾時，請再試一次')); }, 30000);
+    function done(){ clearTimeout(tm); window[cb]=()=>{}; s.remove(); }
+    window[cb] = d => { done(); d && d.ok ? res(d) : rej(Object.assign(new Error((d&&d.error)||'發生錯誤'), {data:d||{}})); };
+    s.onerror = ()=>{ done(); rej(new Error('連線失敗，請確認網路')); };
+    s.src = cfg.api + (cfg.api.includes('?')?'&':'?') + q.toString();
+    document.body.appendChild(s);
+  });
+}
+function fail(e){
+  if(e.data && e.data.code==='auth'){ showSettings('金鑰錯誤，請重新輸入'); return; }
+  if(e.data && e.data.code==='stale'){ loadRoster(true); }
+  snack(e.message);
+}
+
+let snackTimer=null;
+function snack(text, btn, fn, ms=6000){
+  $('#snackTx').textContent=text; const b=$('#snackBtn'); b.textContent=btn||''; b.style.display=btn?'':'none';
+  b.onclick=()=>{ hideSnack(); fn&&fn(); };
+  $('#snack').classList.add('show'); clearTimeout(snackTimer); snackTimer=setTimeout(hideSnack, ms);
+}
+function hideSnack(){ $('#snack').classList.remove('show'); }
+function openSheet(h){ $('#sheet').innerHTML=h; $('#sheetBg').classList.add('show'); }
+function closeSheet(){ $('#sheetBg').classList.remove('show'); }
+$('#sheetBg').addEventListener('click', e=>{ if(e.target.id==='sheetBg') closeSheet(); });
+
+/* ---------- 設定 ---------- */
+$('#btnSet').onclick = ()=>showSettings();
+function showSettings(msg){
+  openSheet(`<h3>設定</h3><div class="muted">只存在這支手機。</div>
+    ${msg?`<div class="badge b-bad" style="margin-top:8px">${esc(msg)}</div>`:''}
+    <label class="f">你的名字（記錄操作人）</label><input class="inp" id="sStaff" value="${esc(cfg.staff)}">
+    <label class="f">API 金鑰（同 PT查詢工具）</label><input class="inp" id="sKey" type="password" value="${esc(cfg.key)}" autocomplete="off">
+    <label class="f">API 網址</label><input class="inp" id="sApi" value="${esc(cfg.api)}">
+    <button class="primary" id="sSave">儲存</button>`);
+  $('#sSave').onclick = ()=>{
+    cfg = { staff:$('#sStaff').value.trim(), key:$('#sKey').value.trim(), api:$('#sApi').value.trim()||DEFAULT_API };
+    lsSet(LS.cfg, cfg); closeSheet(); loadDay();
+  };
+}
+
+$('#datePick').value = ymdInput(S.date);
+$('#datePick').onchange = e=>{ if(!e.target.value) return; S.date=e.target.value.replace(/-/g,''); S.sid=''; loadDay(); };
+
+/* =========================================================
+ *  資料載入
+ * ========================================================= */
+async function loadDay(silent){
+  if(!silent){ S.loading=true; render(); }
+  try{
+    S.day = await api('ptcDay', { date:S.date });
+    if(S.sid && !S.day.sessions.some(x=>x.sid===S.sid)) S.sid='';
+    if(S.sid) await loadRoster(true);
+  }catch(e){ S.day = S.day || { sessions:[] }; fail(e); }
+  S.loading=false; render();
+}
+async function loadRoster(silent){
+  if(!S.sid) return;
+  if(!silent){ S.loading=true; render(); }
+  try{ S.roster = (await api('ptcRoster', { sid:S.sid })).students || []; }catch(e){ fail(e); }
+  S.loading=false; render();
+}
+async function loadLedger(){
+  try{ S.ledger = (await api('ptcLedger', { sid:S.sid })).entries || []; }catch(e){ fail(e); }
+  render();
+}
+function openClass(sid, filter){
+  S.sid=sid; S.filter=filter||'all'; S.q=''; S.tab='list'; S.roster=[]; S.ledger=[]; S.amt={};
+  loadRoster(); loadLedger(); window.scrollTo(0,0);
+}
+
+/* =========================================================
+ *  總覽
+ * ========================================================= */
+function renderHome(){
+  const el=$('#main');
+  if(!cfg.key){ el.innerHTML=`<div class="empty">第一次使用請先設定金鑰<br><br><button class="ghost" onclick="showSettings()">⚙️ 設定</button></div>`; return; }
+  if(S.loading && !S.day){ el.innerHTML=`<div class="empty"><span class="spin"></span> 讀取中…</div>`; return; }
+  const L = (S.day&&S.day.sessions)||[];
+  let h = `<div class="row" style="margin:4px 2px 10px"><div class="h2" style="margin:0;flex:1">${roc(S.date)} 上課中 ${L.length} 班</div>
+    <button class="ghost" id="hRe">${S.loading?'<span class="spin"></span>':'↻'}</button></div>`;
+  if(!L.length) h += `<div class="empty">這一天沒有班別<br><span class="muted">右上角可以換日期</span></div>`;
+  L.forEach((s,i)=>{
+    const present = s.count - s.absent;
+    h += `<div class="card cls" data-sid="${esc(s.sid)}">
+      <div class="row"><div style="flex:1;min-width:0"><div style="font-weight:700">${i+1}. ${esc(short(s))}</div>
+        <div class="muted">${esc(s.session)}　${s.days>1?`第${s.day}天／共${s.days}天`:''}</div></div>
+        ${s.settled?`<span class="badge b-ok">已結算</span>`:''}</div>
+      <div class="big">實到 <b>${present}</b> / ${s.count}</div>
+      <div class="chips wrap">
+        <button class="chip ${s.due?'c-bad':''}" data-f="due">未繳 ${s.due}</button>
+        <button class="chip ${s.unconfirmed?'c-warn':''}" data-f="unconf">未確認 ${s.unconfirmed}</button>
+        <button class="chip" data-f="absent">缺席 ${s.absent}</button>
+        ${s.walkin?`<button class="chip c-pri" data-f="walkin">🆕現場報名 ${s.walkin}</button>`:''}
+      </div>
+      <div class="muted" style="margin-top:8px">現金 ${money(s.cash)}　支出 ${money(s.expense)}</div>
+    </div>`;
+  });
+  el.innerHTML = h;
+  $('#hRe').onclick = ()=>loadDay();
+  el.querySelectorAll('.cls').forEach(c=>{
+    c.onclick = e=>{ const f=e.target.closest('[data-f]'); openClass(c.dataset.sid, f?f.dataset.f:'all'); };
+  });
+}
+
+/* =========================================================
+ *  班級：名單
+ * ========================================================= */
+function stat(){
+  const c={ remitAmt:0, n:S.roster.length, absent:0, due:0, unconf:0, walkin:0, cash:0, later:0, remit:0, dueAmt:0 };
+  S.roster.forEach(s=>{
+    if(s.absent) c.absent++;
+    else if(s.pay==='due'){ c.due++; c.dueAmt += Number(S.amt[s.row]??s.fee)||0; }
+    if(!s.confirmed) c.unconf++;
+    if(s.walkin) c.walkin++;
+    c.cash += s.cash||0;
+    if(s.pay==='later') c.later++;
+    if(s.pay==='remit'){ c.remit++; c.remitAmt+=s.bankAmt||0; }
+  });
+  return c;
+}
+const FILTERS = [['all','全部'],['absent','缺席'],['due','未繳'],['unconf','未確認'],['walkin','現場報名']];
+function match(s,f){
+  if(f==='absent') return s.absent;
+  if(f==='due') return !s.absent && s.pay==='due';
+  if(f==='unconf') return !s.confirmed;
+  if(f==='walkin') return s.walkin;
+  return true;
+}
+
+function renderClass(){
+  const el=$('#main'), s=sess();
+  if(!s){ S.sid=''; renderHome(); return; }
+  const L=S.day.sessions;
+  let h = `<div class="row" style="margin-bottom:6px"><button class="link" id="back">‹ 總覽</button><span style="flex:1"></span>
+      ${L.length>1?`<div class="chips">${L.map((x,i)=>`<button class="chip ${x.sid===S.sid?'on':''}" data-sw="${esc(x.sid)}">${i+1}</button>`).join('')}</div>`:''}</div>
+    <div class="card" style="padding:10px 12px"><div style="font-weight:700">${esc(short(s))}</div>
+      <div class="muted">${esc(s.session)}　${s.days>1?`第${s.day}天／共${s.days}天`:''}</div></div>
+    <div class="seg" style="margin-bottom:10px">${[['list','名單'],['ledger','收支'],['check','清單']].map(([k,t])=>`<button data-tab="${k}" class="${S.tab===k?'on':''}">${t}</button>`).join('')}</div>
+    <div id="pane"></div>`;
+  el.innerHTML=h;
+  $('#back').onclick=()=>{ S.sid=''; loadDay(true); render(); };
+  el.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>openClass(b.dataset.sw, S.filter));
+  el.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; if(S.tab==='ledger') loadLedger(); render(); });
+  if(S.tab==='list') renderList($('#pane'));
+  if(S.tab==='ledger') renderLedger($('#pane'));
+  if(S.tab==='check') renderCheck($('#pane'));
+}
+
+function renderList(el){
+  if(S.loading && !S.roster.length){ el.innerHTML=`<div class="empty"><span class="spin"></span> 讀取名單…</div>`; return; }
+  const c=stat();
+  let h = `<div class="stats5">
+      <div class="stat"><b>${c.n-c.absent}<small>/${c.n}</small></b><span>實到</span></div>
+      <div class="stat"><b style="color:var(--sub)">${c.absent}</b><span>缺席</span></div>
+      <div class="stat"><b style="color:var(--bad)">${c.due}</b><span>未繳</span></div>
+      <div class="stat"><b style="color:var(--warn)">${c.unconf}</b><span>未確認</span></div>
+      <div class="stat"><b style="color:var(--pri)">${c.walkin}</b><span>現場報名</span></div></div>
+    <div class="muted" style="margin:0 2px 8px">預設全員出席，沒到的人按「缺席」。</div>
+    <div class="chips">${FILTERS.map(([k,t])=>`<button class="chip ${S.filter===k?'on':''}" data-f="${k}">${t}</button>`).join('')}
+      <button class="chip" id="re">${S.loading?'<span class="spin"></span>':'↻'}</button></div>
+    <input class="search" id="q" placeholder="🔍 搜尋姓名、公司、身分證後4碼" value="${esc(S.q)}">`;
+
+  const q=S.q.trim();
+  const list=S.roster.filter(s=>match(s,S.filter) && (!q || (s.name+s.company+s.idTail).includes(q)));
+  if(!list.length) h+=`<div class="empty">沒有符合的學員</div>`;
+  const idx = new Map(S.roster.map((s,i)=>[s.row,i+1]));
+  list.forEach(s=>{
+    const b=S.busy[s.row], amt=S.amt[s.row]??s.fee;
+    let pay='';
+    if(s.pay==='remit') pay=`<span class="badge b-ok">✓匯款${s.bankAmt?' '+money(s.bankAmt):''}</span>${s.topup?` <span class="badge b-ok">+現金${s.cash}</span>`:''}`;
+    else if(s.pay==='cash') pay=`<span class="badge b-ok">✓現金 ${money(s.cash)}</span>`;
+    else if(s.pay==='later') pay=`<span class="badge b-warn">公司後付</span>`;
+    else pay= s.absent ? `<span class="badge b-grey">未繳（缺席）</span>` : `<span class="badge b-bad">未繳 ${money(amt)}${!(amt>0)?'（請輸入金額）':''}</span>`;
+    const conf = s.confirmed ? `<span class="badge b-ok">✓確認${/\d{7}/.test(s.confirm)?' '+rocShort((/\d{7}/.exec(s.confirm)||[])[0]):''}</span>` : `<span class="badge b-warn">📝未確認</span>`;
+    h+=`<div class="stu ${s.absent?'abs':''}" data-row="${s.row}">
+      <div class="top">
+        <div class="no">${idx.get(s.row)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="nm">${esc(s.name)} ${s.wait?'<span class="tag">候補</span>':''} ${s.walkin?'<span class="tag t-pri">🆕現場報名</span>':''}</div>
+          <div class="sub">${esc(s.company||'—')}　＊${esc(s.idTail)}</div>
+        </div>
+        <button class="absbtn ${s.absent?'on':''}" data-act="abs" ${b?'disabled':''}>${b==='abs'?'<span class="spin"></span>':(s.absent?'缺席':'缺席')}</button>
+      </div>
+      ${s.absent?`<div class="absline">❌ 缺席 ${s.absDates.map(rocShort).join('、')}　${s.phone?`<a href="tel:${esc(s.phone.replace(/[^\d+]/g,''))}">📞 ${esc(s.phone)}</a>`:'（無電話）'}</div>`:''}
+      <div class="state">${pay} ${conf}
+        <span style="flex:1"></span><button class="more" data-act="more">⋯</button></div>
+      ${!s.absent && s.pay==='due' ? `<div class="btns">
+        <button class="pay" data-act="pay" ${b?'disabled':''}>${b==='pay'?'<span class="spin"></span>':'💵'} 收現 ${money(amt)}</button>
+        <button class="later" data-act="later" ${b?'disabled':''}>${b==='later'?'<span class="spin"></span>':'公司後付'}</button></div>`:''}
+    </div>`;
+  });
+  h+=`<button class="checkout" id="settle">梯次結算</button>`;
+  el.innerHTML=h;
+
+  el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ S.filter=b.dataset.f; render(); });
+  $('#re').onclick=()=>loadRoster();
+  const qi=$('#q'); qi.oninput=()=>{ S.q=qi.value; const p=qi.selectionStart; render(); const n=$('#q'); n.focus(); n.setSelectionRange(p,p); };
+  el.querySelectorAll('.stu [data-act]').forEach(b=>b.onclick=()=>{
+    const s=S.roster.find(x=>x.row===+b.closest('.stu').dataset.row), a=b.dataset.act;
+    if(a==='abs') toggleAbsent(s);
+    if(a==='pay') doPay(s);
+    if(a==='later') doLater(s);
+    if(a==='more') moreMenu(s);
+  });
+  $('#settle').onclick=settleConfirm;
+}
+
+/* ---------- 動作 ---------- */
+const base = s => ({ sid:S.sid, row:s.row, name:s.name, date:S.date });
+
+async function toggleAbsent(s){
+  const on = !s.absent;
+  S.busy[s.row]='abs'; render();
+  try{
+    const d = await api('ptcAbsent', Object.assign(base(s), { on: on?'1':'0' }));
+    s.absent = on; s.absDates = on ? [...(s.absDates||[]), roc(S.date)] : [];
+    if(navigator.vibrate) navigator.vibrate(20);
+    snack(on?`${s.name} 標記缺席`:`${s.name} 改回出席`, '復原', ()=>toggleAbsent(s), 5000);
+  }catch(e){ fail(e); }
+  delete S.busy[s.row]; render();
+}
+
+async function doPay(s, topup){
+  const amount = Number(S.amt[s.row]??s.fee);
+  if(!(amount>0)){ editAmt(s); return; }
+  S.busy[s.row]='pay'; render();
+  try{
+    await api('ptcPay', Object.assign(base(s), { amount, topup: topup?'1':'' }));
+    s.cash=(s.cash||0)+amount; if(topup) s.topup=true; else s.pay='cash';
+    snack(`已收 ${s.name} 現金 ${money(amount)}`, '復原', ()=>doUndo(s));
+  }catch(e){ fail(e); if(e.data&&e.data.code==='paid') loadRoster(true); }
+  delete S.busy[s.row]; render();
+}
+async function doUndo(s){
+  S.busy[s.row]='pay'; render();
+  try{ await api('ptcUndo', base(s)); snack(`已取消 ${s.name} 的收現`); }catch(e){ fail(e); }
+  delete S.busy[s.row]; await loadRoster(true);
+}
+async function doLater(s){
+  S.busy[s.row]='later'; render();
+  try{ const d=await api('ptcLater', base(s)); s.pay=d.later?'later':'due'; snack(d.later?`${s.name} 公司後付`:`已取消 ${s.name} 的公司後付`); }
+  catch(e){ fail(e); }
+  delete S.busy[s.row]; render();
+}
+function editAmt(s, topup){
+  openSheet(`<h3>${esc(s.name)}　${topup?'補收差額':'修改金額'}</h3>
+    <div class="muted">${topup?'匯款被扣手續費等，現場補收的現金':'依收費規則：'+(s.fee?money(s.fee):'無法判斷，請輸入')}</div>
+    <input class="inp" id="aIn" type="number" inputmode="numeric" value="${topup?'':(S.amt[s.row]??s.fee)}" style="font-size:24px;margin-top:10px">
+    ${topup?`<div class="chips" style="margin-top:8px">${[10,15,30].map(v=>`<button class="chip" data-v="${v}">${v}</button>`).join('')}</div>`:''}
+    <button class="primary" id="aGo">${topup?'確認補收':'確定'}</button>`);
+  document.querySelectorAll('#sheet [data-v]').forEach(b=>b.onclick=()=>$('#aIn').value=b.dataset.v);
+  setTimeout(()=>$('#aIn').focus(),50);
+  $('#aGo').onclick=()=>{
+    const v=Math.round(+$('#aIn').value); if(!(v>0)){ snack('請輸入金額'); return; }
+    closeSheet();
+    if(topup){ const keep=S.amt[s.row]; S.amt[s.row]=v; doPay(s,true).then(()=>{ if(keep==null) delete S.amt[s.row]; else S.amt[s.row]=keep; }); }
+    else { S.amt[s.row]=v; render(); }
+  };
+}
+function moreMenu(s){
+  let o=`<h3>${esc(s.name)}</h3><div class="muted">${esc(s.company||'')}　${esc(s.source||'')}　${s.phone?esc(s.phone):''}</div>`;
+  if(s.phone) o+=`<a class="opt" href="tel:${esc(s.phone.replace(/[^\d+]/g,''))}">📞 撥打 ${esc(s.phone)}</a>`;
+  if(s.pay==='due') o+=`<button class="opt" data-o="amt">✏️ 修改收款金額</button>`;
+  if(s.pay==='remit') o+=`<button class="opt" data-o="topup">💵 補收差額（匯款被扣手續費）</button>`;
+  if(s.cash) o+=`<button class="opt danger" data-o="undo">↩︎ 取消最近一筆收現</button>`;
+  if(s.pay==='later') o+=`<button class="opt danger" data-o="later">↩︎ 取消公司後付</button>`;
+  if(s.remit) o+=`<div class="muted" style="padding:10px 4px;border-top:1px solid var(--line)">匯款比對：${esc(s.remit)}</div>`;
+  if(s.confirm) o+=`<div class="muted" style="padding:10px 4px;border-top:1px solid var(--line)">資料確認：${esc(s.confirm)}</div>`;
+  o+=`<button class="opt" onclick="closeSheet()">關閉</button>`;
+  openSheet(o);
+  document.querySelectorAll('#sheet [data-o]').forEach(b=>b.onclick=()=>{ closeSheet(); const k=b.dataset.o;
+    if(k==='amt') editAmt(s); if(k==='topup') editAmt(s,true); if(k==='undo') doUndo(s); if(k==='later') doLater(s); });
+}
+
+/* ---------- 結算 ---------- */
+function settleConfirm(){
+  const c=stat(), act=S.ledger.filter(e=>e.status==='有效'&&e.type==='支出');
+  const exp=act.reduce((a,e)=>a+e.amount,0), expCash=act.filter(e=>e.method==='現場現金').reduce((a,e)=>a+e.amount,0);
+  const absent=S.roster.filter(s=>s.absent).map(s=>s.name), due=S.roster.filter(s=>!s.absent&&s.pay==='due').map(s=>s.name);
+  const s=sess();
+  openSheet(`<h3>梯次結算</h3><div class="muted">${esc(short(s))}　${esc(s.session)}</div>
+    <div class="sum">
+      <div><span class="muted">實到／應到</span><b>${c.n-c.absent} / ${c.n}</b></div>
+      <div><span class="muted">匯款 ${c.remit} 人</span><b>${money(c.remitAmt)}</b></div>
+      <div><span class="muted">現場現金</span><b>${money(c.cash)}</b></div>
+      <div><span class="muted">公司後付</span><b>${c.later} 人</b></div>
+      <div><span class="muted">支出</span><b>${money(exp)}</b></div>
+      <div class="hl"><span class="muted">應交回現金</span><b>${money(c.cash-expCash)}</b></div></div>
+    ${absent.length?`<div class="note">缺席 ${absent.length}：${absent.map(esc).join('、')}</div>`:''}
+    ${due.length?`<div class="note bad">出席但未繳 ${due.length}：${due.map(esc).join('、')}</div>`:''}
+    <div class="muted" style="margin-top:8px">結算結果會寫進「梯次結算」分頁；之後有變動可以再按一次，會更新同一列。</div>
+    <button class="primary" id="sGo">確認結算</button><button class="opt" onclick="closeSheet()">取消</button>`);
+  $('#sGo').onclick=async ()=>{
+    $('#sGo').disabled=true; $('#sGo').innerHTML='<span class="spin"></span>';
+    try{ const d=await api('ptcSettle',{ sid:S.sid, date:S.date }); closeSheet(); snack(`已結算（第 ${d.summary.times} 次）`); loadLedger(); loadDay(true); }
+    catch(e){ closeSheet(); fail(e); }
+  };
+}
+
+/* =========================================================
+ *  收支
+ * ========================================================= */
+function renderLedger(el){
+  const items=['便當','郵資','文具影印','茶水點心','其他'];
+  const act=S.ledger.filter(e=>e.status==='有效');
+  const exps=act.filter(e=>e.type==='支出'), c=stat();
+  const expCash=exps.filter(e=>e.method==='現場現金').reduce((a,e)=>a+e.amount,0);
+  const by={}; exps.forEach(e=>by[e.item]=(by[e.item]||0)+e.amount);
+  let h=`<div class="card"><div class="sum" style="margin-top:0">
+      <div><span class="muted">現場現金收入</span><b>${money(c.cash)}</b></div>
+      <div><span class="muted">支出 ${Object.entries(by).map(([a,b])=>a+' '+b).join('、')}</span><b>${money(exps.reduce((a,e)=>a+e.amount,0))}</b></div>
+      <div class="hl" style="grid-column:1/-1"><span class="muted">應交回現金（現金收入 − 現場現金支出）</span><b>${money(c.cash-expCash)}</b></div></div>
+      <button class="ghost wide" id="lCopy" style="margin-top:8px">📋 複製摘要</button></div>
+    <div class="card"><div style="font-weight:700">新增支出　<span class="muted">${roc(S.date)}</span></div>
+      <label class="f">項目</label>
+      <div class="chips wrap">${items.map(i=>`<button class="chip ${S.exp.item===i?'on':''}" data-i="${i}">${i}</button>`).join('')}</div>
+      ${S.exp.item==='其他'?`<input class="inp" id="eOther" placeholder="項目名稱" style="margin-top:6px">`:''}
+      <label class="f">數量 × 單價（可不填）</label>
+      <div class="grid3"><input class="inp" id="eQty" type="number" inputmode="numeric" placeholder="數量"><span>×</span><input class="inp" id="eUnit" type="number" inputmode="numeric" placeholder="單價"></div>
+      <label class="f">金額</label><input class="inp" id="eAmt" type="number" inputmode="numeric" placeholder="0" style="font-size:20px">
+      <label class="f">付款方式</label>
+      <div class="seg">${['現場現金','零用金','代墊'].map(m=>`<button data-m="${m}" class="${S.exp.method===m?'on':''}">${m}</button>`).join('')}</div>
+      <label class="f">備註</label><input class="inp" id="eNote" placeholder="例：講師＋工作人員便當">
+      <button class="primary" id="eGo">新增支出</button></div>`;
+  if(S.ledger.length){
+    h+=`<div class="h2">操作紀錄</div><div class="card">`;
+    [...S.ledger].reverse().forEach(e=>{
+      const out=e.type==='支出';
+      const label = out ? `${e.item} <span class="muted">${esc(e.method)}</span>` : `${esc(e.type)}${e.name?'　'+esc(e.name):''}`;
+      const amt = (e.type==='支出'||e.type==='收現'||e.type==='公司後付') ? `<div class="m" style="color:${out?'var(--bad)':'var(--ok)'}">${out?'−':''}${money(e.amount)}</div>` : '';
+      h+=`<div class="ent ${e.status!=='有效'?'void':''}"><div><div>${out?label:label}</div>
+        <div class="muted">${esc(e.time)}　${esc(e.staff)}${e.note?'　'+esc(e.note):''}</div></div>${amt}
+        ${out&&e.status==='有效'?`<button class="more" data-void="${esc(e.id)}">✕</button>`:''}</div>`;
+    });
+    h+=`</div>`;
+  }
+  el.innerHTML=h;
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{ S.exp.item=b.dataset.i; render(); });
+  el.querySelectorAll('.seg [data-m]').forEach(b=>b.onclick=()=>{ S.exp.method=b.dataset.m; el.querySelectorAll('.seg [data-m]').forEach(x=>x.classList.toggle('on',x===b)); });
+  const calc=()=>{ const q=+$('#eQty').value,u=+$('#eUnit').value; if(q>0&&u>0) $('#eAmt').value=q*u; };
+  $('#eQty').oninput=calc; $('#eUnit').oninput=calc;
+  $('#eGo').onclick=addExpense;
+  $('#lCopy').onclick=()=>{
+    const s=sess(), absent=S.roster.filter(x=>x.absent).map(x=>x.name);
+    const t=`【梯次收支】${short(s)}\n${s.session}\n實到 ${c.n-c.absent}／應到 ${c.n}${absent.length?`（缺席：${absent.join('、')}）`:''}\n`+
+      `匯款 ${c.remit} 人 ${money(c.remitAmt)}｜現場現金 ${money(c.cash)}｜公司後付 ${c.later}｜未繳 ${c.due}\n`+
+      (exps.length?`支出：${Object.entries(by).map(([a,b])=>a+' '+b).join('、')}\n`:'')+`應交回現金：${money(c.cash-expCash)}`;
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>snack('已複製，可貼到 LINE'))
+      .catch(()=>openSheet(`<h3>複製以下文字</h3><textarea class="inp" rows="9">${esc(t)}</textarea>`));
+  };
+  el.querySelectorAll('[data-void]').forEach(b=>b.onclick=()=>{
+    openSheet(`<h3>作廢這筆支出？</h3><div class="muted">紀錄會保留並標示作廢。</div>
+      <button class="opt danger" id="vYes">作廢</button><button class="opt" onclick="closeSheet()">取消</button>`);
+    $('#vYes').onclick=async()=>{ closeSheet(); try{ await api('ptcVoid',{ sid:S.sid, id:b.dataset.void }); snack('已作廢'); loadLedger(); }catch(e){ fail(e); } };
+  });
+}
+async function addExpense(){
+  const item = S.exp.item==='其他' ? ($('#eOther')?.value||'').trim() : S.exp.item;
+  const amount=Math.round(+$('#eAmt').value);
+  if(!item){ snack('請填項目名稱'); return; } if(!(amount>0)){ snack('請填金額'); return; }
+  const q=+$('#eQty').value,u=+$('#eUnit').value; let note=$('#eNote').value.trim(); if(q>0&&u>0) note=`${q}×${u}`+(note?'　'+note:'');
+  const b=$('#eGo'); b.disabled=true; b.innerHTML='<span class="spin"></span>';
+  try{ await api('ptcExpense',{ sid:S.sid, date:S.date, item, amount, method:S.exp.method, note, rid:'E'+Date.now()+Math.floor(Math.random()*1000) });
+       snack(`已新增 ${item} ${money(amount)}`); loadLedger(); }
+  catch(e){ b.disabled=false; b.textContent='新增支出'; fail(e); }
+}
+
+/* =========================================================
+ *  駐班清單（存在這支手機，每班一份）
+ * ========================================================= */
+const DEFAULT_TPL = [
+  { p:'出發前', items:['確認教室、上課時間、講師到場時間','簽到簿、①檢核表已列印','報到桌 QR 海報（資料確認、照片／上期證書上傳）','試卷、答案卷、滿意度問卷 QR','找零現金、零用金','便當數量確認'] },
+  { p:'報到', items:['點名：沒到的人按「缺席」','未繳學員收現金（名單「未繳」0 人）','收 1 寸照片；沒帶的記「缺照片」','複訓收上期證書影本（「雲」免收）','提醒「未確認」的學員掃 QR 確認資料'] },
+  { p:'上課中', items:['講師到場；代課或變更已記下','消防局督導人員記下真實姓名','便當發放，支出已登記'] },
+  { p:'考試／結訓', items:['考試前完成滿意度問卷','收卷，份數＝到考人數'] },
+  { p:'收班', items:['現金點清，與「應交回現金」相符','按「梯次結算」','收據收齊','簽到簿、試卷、照片、證書影本裝袋帶回'] }
+];
+const getTpl=()=>lsGet(LS.tpl,null)||DEFAULT_TPL;
+function renderCheck(el){
+  const k=LS.ck+S.sid, tpl=getTpl(), st=lsGet(k,{}), c=stat();
+  let total=0, done=0; tpl.forEach((g,gi)=>g.items.forEach((_,ii)=>{ total++; if(st[gi+'_'+ii]) done++; }));
+  let h=`<div class="card"><div class="row"><b style="font-size:22px">${done}/${total}</b><span class="muted">已完成</span><span style="flex:1"></span>
+    <button class="ghost" id="ckEdit">${S.ckEdit?'完成編輯':'✏️ 編輯項目'}</button></div>
+    <div class="bar"><i style="width:${total?done/total*100:0}%;background:var(--ok)"></i></div></div><div class="${S.ckEdit?'editing':''}">`;
+  tpl.forEach((g,gi)=>{
+    h+=`<div class="card"><div class="phase"><h3>${esc(g.p)}</h3><span class="prog">${g.items.filter((_,ii)=>st[gi+'_'+ii]).length}/${g.items.length}</span></div>`;
+    g.items.forEach((it,ii)=>{ const key=gi+'_'+ii, v=st[key]; let auto='';
+      if(/未繳學員收現金/.test(it)) auto=c.due?`<span class="badge b-bad auto">未繳 ${c.due}</span>`:`<span class="badge b-ok auto">已無未繳</span>`;
+      if(/未確認/.test(it)) auto=c.unconf?`<span class="badge b-warn auto">未確認 ${c.unconf}</span>`:`<span class="badge b-ok auto">全部已確認</span>`;
+      if(/點名/.test(it)) auto=`<span class="badge b-pri auto">缺席 ${c.absent}</span>`;
+      h+=`<label class="ck ${v?'done':''}"><input type="checkbox" data-k="${key}" ${v?'checked':''}><span class="tx">${esc(it)}${auto}${v?`<span class="who">✓ ${esc(v.t)} ${esc(v.by||'')}</span>`:''}</span>
+        <button class="del" data-del="${key}" type="button">✕</button></label>`; });
+    if(S.ckEdit) h+=`<div class="row" style="margin-top:8px"><input class="inp" placeholder="新增項目" data-add="${gi}"><button class="ghost" data-addbtn="${gi}">＋</button></div>`;
+    h+=`</div>`;
+  });
+  h+=`</div>`+(S.ckEdit?`<button class="ghost wide" id="ckReset">恢復預設項目</button>`:'');
+  el.innerHTML=h;
+  $('#ckEdit').onclick=()=>{ S.ckEdit=!S.ckEdit; render(); };
+  el.querySelectorAll('[data-k]').forEach(x=>x.onchange=()=>{ const s=lsGet(k,{}); if(x.checked) s[x.dataset.k]={t:nowHM(),by:cfg.staff}; else delete s[x.dataset.k]; lsSet(k,s); render(); });
+  const edit=fn=>{ const t=JSON.parse(JSON.stringify(getTpl())); fn(t); lsSet(LS.tpl,t); render(); };
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{ e.preventDefault(); const [gi,ii]=b.dataset.del.split('_').map(Number); edit(t=>t[gi].items.splice(ii,1)); });
+  el.querySelectorAll('[data-addbtn]').forEach(b=>b.onclick=()=>{ const gi=+b.dataset.addbtn, v=el.querySelector(`[data-add="${gi}"]`).value.trim(); if(v) edit(t=>t[gi].items.push(v)); });
+  const r=$('#ckReset'); if(r) r.onclick=()=>{ localStorage.removeItem(LS.tpl); render(); };
+}
+
+/* ========================================================= */
+function render(){ if(S.sid) renderClass(); else renderHome(); }
+setInterval(()=>{ if(document.visibilityState==='visible' && cfg.key && !Object.keys(S.busy).length){ S.sid ? loadRoster(true) : loadDay(true); } }, 90000);
+render();
+if(cfg.key) loadDay(); else showSettings();
+
+</script>
+</body>
+</html>
