@@ -188,12 +188,32 @@ function api(action, params={}){
     const tm = setTimeout(()=>{ done(); rej(new Error('連線逾時，請再試一次')); }, 30000);
     function done(){ clearTimeout(tm); window[cb]=()=>{}; s.remove(); }
     window[cb] = d => { done(); d && d.ok ? res(d) : rej(Object.assign(new Error((d&&d.error)||'發生錯誤'), {data:d||{}})); };
-    s.onerror = ()=>{ done(); rej(new Error('連線失敗，請確認網路')); };
-    s.src = cfg.api + (cfg.api.includes('?')?'&':'?') + q;
+    const url = cfg.api + (cfg.api.includes('?')?'&':'?') + q;
+    s.onerror = ()=>{ done(); viaFetch(url.replace('callback='+cb, 'callback=')).then(res, rej); };
+    s.src = url;
     document.body.appendChild(s);
   });
 }
+/* JSONP 失敗時改用 fetch 重試，並把伺服器實際回傳的內容顯示出來 */
+async function viaFetch(url){
+  let txt='';
+  try{
+    const r = await fetch(url, { redirect:'follow' });
+    txt = await r.text();
+    const d = JSON.parse(txt);
+    if(d && d.ok) return d;
+    throw Object.assign(new Error((d&&d.error)||'發生錯誤'), {data:d||{}});
+  }catch(e){
+    if(e.data) throw e;
+    const clean = txt.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,300);
+    throw Object.assign(new Error(clean ? '伺服器回應錯誤：'+clean : '連線失敗（'+(e.message||'無回應')+'）'), {data:{code:'server', detail:clean}});
+  }
+}
 function fail(e){
+  if(e.data && e.data.code==='server'){
+    openSheet(`<h3>讀取失敗</h3><div class="muted">請截圖這個畫面給管理者</div><textarea class="inp" rows="8" style="margin-top:10px;font-size:13px">${esc(e.message)}</textarea><button class="opt" onclick="closeSheet()">關閉</button>`);
+    return;
+  }
   if(e.data && e.data.code==='auth'){ showSettings('金鑰錯誤，請重新輸入'); return; }
   if(e.data && e.data.code==='stale'){ loadRoster(true); }
   snack(e.message);
@@ -252,7 +272,7 @@ async function loadLedger(){
 }
 function openClass(sid, filter){
   S.sid=sid; S.filter=filter||'all'; S.q=''; S.tab='list'; S.roster=[]; S.ledger=[]; S.amt={};
-  loadRoster(); loadLedger(); window.scrollTo(0,0);
+  loadRoster().then(loadLedger); window.scrollTo(0,0);
 }
 
 /* =========================================================
