@@ -59,7 +59,9 @@ nav button.on{color:var(--pri);font-weight:600}
 .amt{margin-left:auto;border:1px dashed #cfd5e3;background:#fafbfe;border-radius:10px;padding:4px 10px;font-weight:700;white-space:nowrap}
 .amt.est::after{content:" 估";font-size:11px;color:var(--warn)}
 .more{border:0;background:none;color:var(--sub);font-size:20px;padding:0 4px;line-height:1}
-.btns{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px}
+.btns{display:grid;grid-template-columns:1.35fr 1.15fr 1fr;gap:6px;margin-top:10px}
+.pay.xfer{background:var(--pri)}
+.btns .pay{font-size:15px;padding:13px 4px}
 .pay{border:0;border-radius:12px;padding:13px 6px;font-weight:700;font-size:16px;color:#fff;background:var(--ok)}
 .pay:disabled{opacity:.5}
 .later{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 4px;font-size:14px;color:var(--sub)}
@@ -314,7 +316,7 @@ function renderHome(){
         <button class="chip" data-f="absent">缺席 ${s.absent}</button>
         ${s.walkin?`<button class="chip c-pri" data-f="walkin">🆕現場報名 ${s.walkin}</button>`:''}
       </div>
-      <div class="muted" style="margin-top:8px">現金 ${money(s.cash)}　支出 ${money(s.expense)}</div>
+      <div class="muted" style="margin-top:8px">現金 ${money(s.cash)}　現場匯款待對帳 ${money(s.xfer||0)}　支出 ${money(s.expense)}</div>
     </div>`;
   });
   el.innerHTML = h;
@@ -328,13 +330,14 @@ function renderHome(){
  *  班級：名單
  * ========================================================= */
 function stat(){
-  const c={ remitAmt:0, n:S.roster.length, absent:0, due:0, unconf:0, walkin:0, cash:0, later:0, remit:0, dueAmt:0 };
+  const c={ remitAmt:0, n:S.roster.length, absent:0, due:0, unconf:0, walkin:0, cash:0, cashN:0, xfer:0, xferN:0, later:0, remit:0, dueAmt:0 };
   S.roster.forEach(s=>{
     if(s.absent) c.absent++;
     else if(s.pay==='due'){ c.due++; c.dueAmt += Number(S.amt[s.row]??s.fee)||0; }
     if(!s.confirmed) c.unconf++;
     if(s.walkin) c.walkin++;
-    c.cash += s.cash||0;
+    c.cash += s.cash||0; if(s.cash) c.cashN++;
+    c.xfer += s.xfer||0; if(s.xfer) c.xferN++;
     if(s.pay==='later') c.later++;
     if(s.pay==='remit'){ c.remit++; c.remitAmt+=s.bankAmt||0; }
   });
@@ -389,8 +392,9 @@ function renderList(el){
   list.forEach(s=>{
     const b=S.busy[s.row], amt=S.amt[s.row]??s.fee;
     let pay='';
-    if(s.pay==='remit') pay=`<span class="badge b-ok">✓匯款${s.bankAmt?' '+money(s.bankAmt):''}</span>${s.topup?` <span class="badge b-ok">+現金${s.cash}</span>`:''}`;
+    if(s.pay==='remit') pay=`<span class="badge b-ok">✓匯款${s.bankAmt?' '+money(s.bankAmt):''}</span>${s.xferLogged?' <span class="badge b-grey">現場已登記</span>':''}${s.topup?` <span class="badge b-ok">+現金${s.cash}</span>`:''}`;
     else if(s.pay==='cash') pay=`<span class="badge b-ok">✓現金 ${money(s.cash)}</span>`;
+    else if(s.pay==='xfer') pay=`<span class="badge b-pri">📱現場匯款 ${money(s.xfer)}（待對帳）</span>`;
     else if(s.pay==='later') pay=`<span class="badge b-warn">公司後付</span>`;
     else pay= s.absent ? `<span class="badge b-grey">未繳（缺席）</span>` : `<span class="badge b-bad">未繳 ${money(amt)}${!(amt>0)?'（請輸入金額）':''}</span>`;
     const conf = s.confirmed ? `<span class="badge b-ok">✓確認${/\d{7}/.test(s.confirm)?' '+rocShort((/\d{7}/.exec(s.confirm)||[])[0]):''}</span>` : `<span class="badge b-warn">📝未確認</span>`;
@@ -408,7 +412,8 @@ function renderList(el){
       <div class="state">${pay} ${conf}
         <span style="flex:1"></span><button class="more" data-act="more">⋯</button></div>
       ${!s.absent && s.pay==='due' ? `<div class="btns">
-        <button class="pay" data-act="pay" ${b?'disabled':''}>${b==='pay'?'<span class="spin"></span>':'💵'} 收現 ${money(amt)}</button>
+        <button class="pay" data-act="pay" ${b?'disabled':''}>${b==='pay'?'<span class="spin"></span>':'💵'} 現金 ${money(amt)}</button>
+        <button class="pay xfer" data-act="xfer" ${b?'disabled':''}>${b==='xfer'?'<span class="spin"></span>':'📱'} 現場匯款</button>
         <button class="later" data-act="later" ${b?'disabled':''}>${b==='later'?'<span class="spin"></span>':'公司後付'}</button></div>`:''}
     </div>`;
   });
@@ -423,6 +428,7 @@ function renderList(el){
     const s=S.roster.find(x=>x.row===+b.closest('.stu').dataset.row), a=b.dataset.act;
     if(a==='abs') toggleAbsent(s);
     if(a==='pay') doPay(s);
+    if(a==='xfer') doPay(s, false, '轉帳');
     if(a==='later') doLater(s);
     if(a==='more') moreMenu(s);
   });
@@ -444,20 +450,22 @@ async function toggleAbsent(s){
   delete S.busy[s.row]; render();
 }
 
-async function doPay(s, topup){
+async function doPay(s, topup, method){
+  const isX = method==='轉帳';
   const amount = Number(S.amt[s.row]??s.fee);
   if(!(amount>0)){ editAmt(s); return; }
-  S.busy[s.row]='pay'; render();
+  S.busy[s.row]= isX ? 'xfer' : 'pay'; render();
   try{
-    await api('ptcPay', Object.assign(base(s), { amount, topup: topup?'1':'' }));
-    s.cash=(s.cash||0)+amount; if(topup) s.topup=true; else s.pay='cash';
-    snack(`已收 ${s.name} 現金 ${money(amount)}`, '復原', ()=>doUndo(s));
+    await api('ptcPay', Object.assign(base(s), { amount, topup: topup?'1':'', method: isX?'轉帳':'現金' }));
+    if(isX){ s.xfer=(s.xfer||0)+amount; if(topup) s.topup=true; else s.pay='xfer'; }
+    else { s.cash=(s.cash||0)+amount; if(topup) s.topup=true; else s.pay='cash'; }
+    snack(isX?`已登記 ${s.name} 現場匯款 ${money(amount)}（待對帳）`:`已收 ${s.name} 現金 ${money(amount)}`, '復原', ()=>doUndo(s, isX));
   }catch(e){ fail(e); if(e.data&&e.data.code==='paid') loadRoster(true); }
   delete S.busy[s.row]; render();
 }
-async function doUndo(s){
+async function doUndo(s, isX){
   S.busy[s.row]='pay'; render();
-  try{ await api('ptcUndo', base(s)); snack(`已取消 ${s.name} 的收現`); }catch(e){ fail(e); }
+  try{ await api('ptcUndo', Object.assign(base(s), isX?{kind:'xfer'}:{})); snack(isX?`已取消 ${s.name} 的現場匯款登記`:`已取消 ${s.name} 的收現`); }catch(e){ fail(e); }
   delete S.busy[s.row]; await loadRoster(true);
 }
 async function doLater(s){
@@ -487,13 +495,14 @@ function moreMenu(s){
   if(s.pay==='due') o+=`<button class="opt" data-o="amt">✏️ 修改收款金額</button>`;
   if(s.pay==='remit') o+=`<button class="opt" data-o="topup">💵 補收差額（匯款被扣手續費）</button>`;
   if(s.cash) o+=`<button class="opt danger" data-o="undo">↩︎ 取消最近一筆收現</button>`;
+  if(s.pay==='xfer') o+=`<button class="opt danger" data-o="undox">↩︎ 取消現場匯款登記</button>`;
   if(s.pay==='later') o+=`<button class="opt danger" data-o="later">↩︎ 取消公司後付</button>`;
   if(s.remit) o+=`<div class="muted" style="padding:10px 4px;border-top:1px solid var(--line)">匯款比對：${esc(s.remit)}</div>`;
   if(s.confirm) o+=`<div class="muted" style="padding:10px 4px;border-top:1px solid var(--line)">資料確認：${esc(s.confirm)}</div>`;
   o+=`<button class="opt" onclick="closeSheet()">關閉</button>`;
   openSheet(o);
   document.querySelectorAll('#sheet [data-o]').forEach(b=>b.onclick=()=>{ closeSheet(); const k=b.dataset.o;
-    if(k==='amt') editAmt(s); if(k==='topup') editAmt(s,true); if(k==='undo') doUndo(s); if(k==='later') doLater(s); });
+    if(k==='amt') editAmt(s); if(k==='topup') editAmt(s,true); if(k==='undo') doUndo(s); if(k==='undox') doUndo(s,true); if(k==='later') doLater(s); });
 }
 
 /* ---------- 結算 ---------- */
@@ -506,7 +515,8 @@ function settleConfirm(){
     <div class="sum">
       <div><span class="muted">實到／應到</span><b>${c.n-c.absent} / ${c.n}</b></div>
       <div><span class="muted">匯款 ${c.remit} 人</span><b>${money(c.remitAmt)}</b></div>
-      <div><span class="muted">現場現金</span><b>${money(c.cash)}</b></div>
+      <div><span class="muted">現場現金 ${c.cashN} 人</span><b>${money(c.cash)}</b></div>
+      <div><span class="muted">現場匯款待對帳 ${c.xferN} 人</span><b>${money(c.xfer)}</b></div>
       <div><span class="muted">公司後付</span><b>${c.later} 人</b></div>
       <div><span class="muted">支出</span><b>${money(exp)}</b></div>
       <div class="hl"><span class="muted">應交回現金</span><b>${money(c.cash-expCash)}</b></div></div>
@@ -532,6 +542,7 @@ function renderLedger(el){
   const by={}; exps.forEach(e=>by[e.item]=(by[e.item]||0)+e.amount);
   let h=`<div class="card"><div class="sum" style="margin-top:0">
       <div><span class="muted">現場現金收入</span><b>${money(c.cash)}</b></div>
+      <div><span class="muted">現場匯款待對帳（不算現金）</span><b>${money(c.xfer)}</b></div>
       <div><span class="muted">支出 ${Object.entries(by).map(([a,b])=>a+' '+b).join('、')}</span><b>${money(exps.reduce((a,e)=>a+e.amount,0))}</b></div>
       <div class="hl" style="grid-column:1/-1"><span class="muted">應交回現金（現金收入 − 現場現金支出）</span><b>${money(c.cash-expCash)}</b></div></div>
       <button class="ghost wide" id="lCopy" style="margin-top:8px">📋 複製摘要</button></div>
@@ -567,7 +578,7 @@ function renderLedger(el){
   $('#lCopy').onclick=()=>{
     const s=sess(), absent=S.roster.filter(x=>x.absent).map(x=>x.name);
     const t=`【梯次收支】${short(s)}\n${s.session}\n實到 ${c.n-c.absent}／應到 ${c.n}${absent.length?`（缺席：${absent.join('、')}）`:''}\n`+
-      `匯款 ${c.remit} 人 ${money(c.remitAmt)}｜現場現金 ${money(c.cash)}｜公司後付 ${c.later}｜未繳 ${c.due}\n`+
+      `匯款 ${c.remit} 人 ${money(c.remitAmt)}｜現場現金 ${money(c.cash)}｜現場匯款待對帳 ${c.xferN} 人 ${money(c.xfer)}｜公司後付 ${c.later}｜未繳 ${c.due}\n`+
       (exps.length?`支出：${Object.entries(by).map(([a,b])=>a+' '+b).join('、')}\n`:'')+`應交回現金：${money(c.cash-expCash)}`;
     (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>snack('已複製，可貼到 LINE'))
       .catch(()=>openSheet(`<h3>複製以下文字</h3><textarea class="inp" rows="9">${esc(t)}</textarea>`));
