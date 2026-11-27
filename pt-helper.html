@@ -429,7 +429,7 @@ function renderList(el){
     if(a==='abs') toggleAbsent(s);
     if(a==='pay') doPay(s);
     if(a==='xfer') doPay(s, false, '轉帳');
-    if(a==='later') doLater(s);
+    if(a==='later') doLater(s, true);
     if(a==='more') moreMenu(s);
   });
   $('#settle').onclick=settleConfirm;
@@ -446,7 +446,8 @@ async function toggleAbsent(s){
     s.absent = on; s.absDates = on ? [...(s.absDates||[]), roc(S.date)] : [];
     if(navigator.vibrate) navigator.vibrate(20);
     snack(on?`${s.name} 標記缺席`:`${s.name} 改回出席`, '復原', ()=>toggleAbsent(s), 5000);
-  }catch(e){ fail(e); }
+    refreshSoon();
+  }catch(e){ fail(e); refreshSoon(); }
   delete S.busy[s.row]; render();
 }
 
@@ -460,7 +461,8 @@ async function doPay(s, topup, method){
     if(isX){ s.xfer=(s.xfer||0)+amount; if(topup) s.topup=true; else s.pay='xfer'; }
     else { s.cash=(s.cash||0)+amount; if(topup) s.topup=true; else s.pay='cash'; }
     snack(isX?`已登記 ${s.name} 現場匯款 ${money(amount)}（待對帳）`:`已收 ${s.name} 現金 ${money(amount)}`, '復原', ()=>doUndo(s, isX));
-  }catch(e){ fail(e); if(e.data&&e.data.code==='paid') loadRoster(true); }
+    refreshSoon();
+  }catch(e){ fail(e); refreshSoon(); }
   delete S.busy[s.row]; render();
 }
 async function doUndo(s, isX){
@@ -468,11 +470,21 @@ async function doUndo(s, isX){
   try{ await api('ptcUndo', Object.assign(base(s), isX?{kind:'xfer'}:{})); snack(isX?`已取消 ${s.name} 的現場匯款登記`:`已取消 ${s.name} 的收現`); }catch(e){ fail(e); }
   delete S.busy[s.row]; await loadRoster(true);
 }
-async function doLater(s){
+async function doLater(s, on){
   S.busy[s.row]='later'; render();
-  try{ const d=await api('ptcLater', base(s)); s.pay=d.later?'later':'due'; snack(d.later?`${s.name} 公司後付`:`已取消 ${s.name} 的公司後付`); }
-  catch(e){ fail(e); }
+  try{
+    const d=await api('ptcLater', Object.assign(base(s), { on: on?'1':'0' }));
+    s.pay=d.later?'later':'due';
+    snack(d.later?`${s.name} 公司後付`:`已取消 ${s.name} 的公司後付`, d.later?'復原':'', d.later?()=>doLater(s,false):null);
+    refreshSoon();
+  }catch(e){ fail(e); refreshSoon(); }
   delete S.busy[s.row]; render();
+}
+/* 寫入後稍等一下自動更新名單，讓其他人剛做的變動也出現 */
+let refreshTimer=null;
+function refreshSoon(){
+  clearTimeout(refreshTimer);
+  refreshTimer=setTimeout(()=>{ if(S.sid && !Object.keys(S.busy).length) loadRoster(true); }, 2500);
 }
 function editAmt(s, topup){
   openSheet(`<h3>${esc(s.name)}　${topup?'補收差額':'修改金額'}</h3>
@@ -502,7 +514,7 @@ function moreMenu(s){
   o+=`<button class="opt" onclick="closeSheet()">關閉</button>`;
   openSheet(o);
   document.querySelectorAll('#sheet [data-o]').forEach(b=>b.onclick=()=>{ closeSheet(); const k=b.dataset.o;
-    if(k==='amt') editAmt(s); if(k==='topup') editAmt(s,true); if(k==='undo') doUndo(s); if(k==='undox') doUndo(s,true); if(k==='later') doLater(s); });
+    if(k==='amt') editAmt(s); if(k==='topup') editAmt(s,true); if(k==='undo') doUndo(s); if(k==='undox') doUndo(s,true); if(k==='later') doLater(s, false); });
 }
 
 /* ---------- 結算 ---------- */
@@ -640,7 +652,7 @@ function renderCheck(el){
 
 /* ========================================================= */
 function render(){ if(S.sid) renderClass(); else renderHome(); }
-setInterval(()=>{ if(document.visibilityState==='visible' && cfg.key && !Object.keys(S.busy).length){ S.sid ? loadRoster(true) : loadDay(true); } }, 90000);
+setInterval(()=>{ if(document.visibilityState==='visible' && cfg.key && !Object.keys(S.busy).length){ S.sid ? loadRoster(true) : loadDay(true); } }, 45000);
 render();
 if(cfg.key) loadDay(); else showSettings();
 
